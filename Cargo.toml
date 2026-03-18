@@ -1,0 +1,10 @@
+[package]
+name = "lfs_bundle"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+flate2 = "1.1.9"
+regex = "1.12.3"
+tar = "0.4.44"
