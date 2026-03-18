@@ -1,10 +1,11 @@
+use anyhow::{Context, Result};
+use regex::Regex;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use anyhow::{Result, Context};
-use regex::Regex;
 
 fn main() -> Result<()> {
+    check_env()?;
     pack_lfs_bundle()
 }
 
@@ -15,13 +16,19 @@ fn pack_lfs_bundle() -> std::result::Result<(), anyhow::Error> {
     let bundle_file = "mybundle.bundle";
     let lfs_file = "mybundle_lfs.tar.gz";
     // Windows上习惯用 .tar.gz
-    
+
     println!("--- Step 1: Creating Git Bundle ---");
-    
+
     // 2. 调用 git bundle create
     // 命令: git bundle create mybundle.bundle master~1..master --
     let status = Command::new("git")
-        .args(["bundle", "create", bundle_file, &format!("{}..{}", start, end), "--"])
+        .args([
+            "bundle",
+            "create",
+            bundle_file,
+            &format!("{}..{}", start, end),
+            "--",
+        ])
         .status()
         .context("Failed to execute git bundle. Is Git installed and in PATH?")?;
 
@@ -77,7 +84,7 @@ fn parse_lfs_output(output: &str) -> Vec<PathBuf> {
             let p1 = &caps[1];
             let p2 = &caps[2];
             let rest = &caps[3];
-            
+
             // 构建路径: .git/lfs/objects/p1/p2/p1p2rest
             // 在 Windows 上路径分隔符是 \
             let path = Path::new(".git")
@@ -86,7 +93,7 @@ fn parse_lfs_output(output: &str) -> Vec<PathBuf> {
                 .join(p1)
                 .join(p2)
                 .join(format!("{}{}{}", p1, p2, rest));
-            
+
             paths.push(path);
         }
     }
@@ -111,5 +118,38 @@ fn create_lfs_tar(filename: &str, files: &[PathBuf]) -> Result<()> {
 
     // 完成压缩
     let _ = tar_builder.into_inner()?;
+    Ok(())
+}
+
+fn check_command(name: &str, args: &[&str], desc: String) -> Result<()> {
+    let mut cmd = Command::new(name);
+    for arg in args {
+        cmd.arg(arg);
+    }
+
+    let output = cmd.output().context(desc)?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "{} command failed with exit code: {:?}",
+            name,
+            output.status
+        );
+    }
+
+    Ok(())
+}
+
+fn check_env() -> Result<()> {
+    check_command(
+        "git",
+        &["--version"],
+        "Failed to execute git. Is Git installed and in PATH?".to_string(),
+    )?;
+    check_command(
+        "git",
+        &["lfs", "version"],
+        "Failed to execute git lfs. Is Git LFS installed?".to_string(),
+    )?;
     Ok(())
 }
