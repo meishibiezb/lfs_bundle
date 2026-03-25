@@ -7,6 +7,8 @@ fn parse_lfs_output_converts_hashes_to_object_paths() {
     let paths = parse_lfs_output(output);
     assert_eq!(
         paths,
-        vec![PathBuf::from(".git/lfs/objects/52/b6/52b6c1c0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+        vec![PathBuf::from(
+            ".git/lfs/objects/52/b6/52b6c1c0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        )]
     );
 }

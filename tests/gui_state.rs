@@ -41,3 +41,10 @@ fn import_form_builds_request_for_existing_branch() {
     assert_eq!(request.branch, "master");
     assert!(request.safe_mode);
 }
+
+#[test]
+fn completed_operation_is_recorded_in_history_view_model() {
+    let mut app = BundleStudioApp::default();
+    app.record_operation("imported package into master");
+    assert_eq!(app.recent_ops.len(), 1);
+}

@@ -20,7 +20,10 @@ pub fn import_archive(req: &ImportRequest) -> Result<()> {
     import_archive_with_injection(req, FailureInjection::None)
 }
 
-pub fn import_archive_with_injection(req: &ImportRequest, injection: FailureInjection) -> Result<()> {
+pub fn import_archive_with_injection(
+    req: &ImportRequest,
+    injection: FailureInjection,
+) -> Result<()> {
     if !is_git_repo_path(&req.repo_path) {
         anyhow::bail!("not a git repository: {}", req.repo_path.display());
     }
@@ -64,12 +67,21 @@ pub fn import_archive_with_injection(req: &ImportRequest, injection: FailureInje
     Ok(())
 }
 
-fn apply_bundle_to_branch(repo_path: &Path, branch: &str, bundle_path: &Path, temp_ref: &str) -> Result<()> {
+fn apply_bundle_to_branch(
+    repo_path: &Path,
+    branch: &str,
+    bundle_path: &Path,
+    temp_ref: &str,
+) -> Result<()> {
     let bundle_ref = bundle_head_ref(bundle_path)?;
     let fetch_spec = format!("{}:{}", bundle_ref, temp_ref);
     run_command(
         "git",
-        &["fetch", bundle_path.to_str().context("invalid bundle path")?, fetch_spec.as_str()],
+        &[
+            "fetch",
+            bundle_path.to_str().context("invalid bundle path")?,
+            fetch_spec.as_str(),
+        ],
         Some(repo_path),
     )?;
 
@@ -81,7 +93,12 @@ fn apply_bundle_to_branch(repo_path: &Path, branch: &str, bundle_path: &Path, te
     let branch_ref = format!("refs/heads/{}", branch);
     run_command(
         "git",
-        &["update-ref", branch_ref.as_str(), target_commit.as_str(), original_head.as_str()],
+        &[
+            "update-ref",
+            branch_ref.as_str(),
+            target_commit.as_str(),
+            original_head.as_str(),
+        ],
         Some(repo_path),
     )?;
 
@@ -100,7 +117,11 @@ fn ensure_fast_forward(repo_path: &Path, original_head: &str, target_commit: &st
 fn bundle_head_ref(bundle_path: &Path) -> Result<String> {
     let output = run_command(
         "git",
-        &["bundle", "list-heads", bundle_path.to_str().context("invalid bundle path")?],
+        &[
+            "bundle",
+            "list-heads",
+            bundle_path.to_str().context("invalid bundle path")?,
+        ],
         None,
     )?;
     let stdout = String::from_utf8(output.stdout).context("bundle head output was not utf-8")?;

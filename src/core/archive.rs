@@ -1,4 +1,4 @@
-use crate::core::manifest::{read_manifest, BundleManifest};
+use crate::core::manifest::{BundleManifest, read_manifest};
 use anyhow::{Context, Result};
 use std::fs;
 use std::io::{self, Write};
@@ -6,7 +6,12 @@ use std::path::Path;
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-pub fn build_final_archive(output_zip: &Path, bundle: &Path, lfs: &Path, manifest: &Path) -> Result<()> {
+pub fn build_final_archive(
+    output_zip: &Path,
+    bundle: &Path,
+    lfs: &Path,
+    manifest: &Path,
+) -> Result<()> {
     let file = fs::File::create(output_zip)
         .with_context(|| format!("failed to create archive: {}", output_zip.display()))?;
     let mut zip = ZipWriter::new(file);
@@ -18,7 +23,8 @@ pub fn build_final_archive(output_zip: &Path, bundle: &Path, lfs: &Path, manifes
         ("manifest.json", manifest),
     ] {
         zip.start_file(name, options)?;
-        let bytes = fs::read(path).with_context(|| format!("failed to read archive member: {}", path.display()))?;
+        let bytes = fs::read(path)
+            .with_context(|| format!("failed to read archive member: {}", path.display()))?;
         zip.write_all(&bytes)?;
     }
 
@@ -27,7 +33,8 @@ pub fn build_final_archive(output_zip: &Path, bundle: &Path, lfs: &Path, manifes
 }
 
 pub fn extract_archive(input_zip: &Path, dest: &Path) -> Result<()> {
-    fs::create_dir_all(dest).with_context(|| format!("failed to create extraction directory: {}", dest.display()))?;
+    fs::create_dir_all(dest)
+        .with_context(|| format!("failed to create extraction directory: {}", dest.display()))?;
     let file = fs::File::open(input_zip)
         .with_context(|| format!("failed to open archive: {}", input_zip.display()))?;
     let mut zip = ZipArchive::new(file)?;

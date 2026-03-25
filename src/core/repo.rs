@@ -50,10 +50,15 @@ pub fn load_commits(repo: &Path, limit: usize) -> Result<Vec<CommitInfo>> {
 pub fn load_branches(repo: &Path) -> Result<Vec<BranchInfo>> {
     let output = run_command(
         "git",
-        &["for-each-ref", "--format=%(refname:short)%x1f%(objectname)", "refs/heads"],
+        &[
+            "for-each-ref",
+            "--format=%(refname:short)%x1f%(objectname)",
+            "refs/heads",
+        ],
         Some(repo),
     )?;
-    let stdout = String::from_utf8(output.stdout).context("git branch output was not valid utf-8")?;
+    let stdout =
+        String::from_utf8(output.stdout).context("git branch output was not valid utf-8")?;
 
     Ok(stdout
         .lines()

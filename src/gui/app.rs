@@ -24,6 +24,10 @@ impl BundleStudioApp {
     pub fn active_tab(&self) -> AppTab {
         self.active_tab
     }
+
+    pub fn record_operation(&mut self, summary: impl Into<String>) {
+        self.recent_ops.push(summary.into());
+    }
 }
 
 impl Default for BundleStudioApp {
@@ -32,9 +36,17 @@ impl Default for BundleStudioApp {
             active_tab: AppTab::Packaging,
             logs: Vec::new(),
             recent_ops: Vec::new(),
-            theme: AppTheme { accent: AppTheme::default_accent() },
-            pack_view: pack::PackViewState { safe_mode: true, ..Default::default() },
-            import_view: import::ImportViewState { safe_mode: true, ..Default::default() },
+            theme: AppTheme {
+                accent: AppTheme::default_accent(),
+            },
+            pack_view: pack::PackViewState {
+                safe_mode: true,
+                ..Default::default()
+            },
+            import_view: import::ImportViewState {
+                safe_mode: true,
+                ..Default::default()
+            },
             history_view: history::HistoryViewState,
             settings_view: settings::SettingsViewState::default(),
         }
@@ -43,6 +55,16 @@ impl Default for BundleStudioApp {
 
 impl eframe::App for BundleStudioApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.heading("LFS Bundle Studio");
+                ui.label(format!(
+                    "Accent: #{:02X}{:02X}{:02X}",
+                    self.theme.accent[0], self.theme.accent[1], self.theme.accent[2]
+                ));
+            });
+        });
+
         egui::SidePanel::left("nav").show(ctx, |ui| {
             if ui.button("Packaging").clicked() {
                 self.active_tab = AppTab::Packaging;
@@ -61,7 +83,7 @@ impl eframe::App for BundleStudioApp {
         egui::CentralPanel::default().show(ctx, |ui| match self.active_tab {
             AppTab::Packaging => pack::render(ui, &mut self.pack_view),
             AppTab::Import => import::render(ui, &mut self.import_view),
-            AppTab::History => history::render(ui, &mut self.history_view),
+            AppTab::History => history::render(ui, &self.recent_ops, &mut self.history_view),
             AppTab::Settings => settings::render(ui, &mut self.settings_view),
         });
     }

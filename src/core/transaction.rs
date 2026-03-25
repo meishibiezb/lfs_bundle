@@ -23,7 +23,11 @@ impl ImportTransaction {
         let branch_ref = format!("refs/heads/{}", self.branch);
         run_command(
             "git",
-            &["update-ref", branch_ref.as_str(), self.original_head.as_str()],
+            &[
+                "update-ref",
+                branch_ref.as_str(),
+                self.original_head.as_str(),
+            ],
             Some(&self.repo_path),
         )?;
         Ok(())

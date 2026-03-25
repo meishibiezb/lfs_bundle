@@ -1,5 +1,5 @@
 use anyhow::Result;
-use lfs_bundle::core::import::{import_archive_with_injection, FailureInjection};
+use lfs_bundle::core::import::{FailureInjection, import_archive_with_injection};
 use lfs_bundle::core::models::{ImportRequest, PackageRequest};
 use lfs_bundle::core::pack::package_repository;
 use std::fs;

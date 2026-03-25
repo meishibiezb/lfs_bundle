@@ -25,11 +25,24 @@ impl ImportViewState {
 
 pub fn render(ui: &mut Ui, state: &mut ImportViewState) {
     ui.heading("Import");
-    ui.label("Archive path");
-    ui.text_edit_singleline(&mut state.archive_path);
-    ui.label("Repository");
-    ui.text_edit_singleline(&mut state.repo_path);
-    ui.label("Branch");
-    ui.text_edit_singleline(&mut state.branch);
-    ui.checkbox(&mut state.safe_mode, "Safe mode");
+    ui.group(|ui| {
+        ui.label("Archive path");
+        ui.text_edit_singleline(&mut state.archive_path);
+        ui.label("Repository");
+        ui.text_edit_singleline(&mut state.repo_path);
+        ui.label("Branch");
+        ui.text_edit_singleline(&mut state.branch);
+        ui.checkbox(&mut state.safe_mode, "Safe mode");
+    });
+
+    ui.separator();
+    ui.heading("Validation");
+    if state.to_request().is_some() {
+        ui.colored_label(egui::Color32::LIGHT_GREEN, "Ready to import");
+    } else {
+        ui.colored_label(
+            egui::Color32::YELLOW,
+            "Fill archive, repo, and branch first",
+        );
+    }
 }

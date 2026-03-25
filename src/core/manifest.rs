@@ -26,7 +26,8 @@ pub struct BundleManifest {
 }
 
 pub fn sha256_file(path: &Path) -> Result<String> {
-    let mut file = fs::File::open(path).with_context(|| format!("failed to open file for hashing: {}", path.display()))?;
+    let mut file = fs::File::open(path)
+        .with_context(|| format!("failed to open file for hashing: {}", path.display()))?;
     let mut hasher = Sha256::new();
     let mut buf = [0_u8; 8192];
 
@@ -43,11 +44,13 @@ pub fn sha256_file(path: &Path) -> Result<String> {
 
 pub fn write_manifest(path: &Path, manifest: &BundleManifest) -> Result<()> {
     let json = serde_json::to_vec_pretty(manifest)?;
-    fs::write(path, json).with_context(|| format!("failed to write manifest: {}", path.display()))?;
+    fs::write(path, json)
+        .with_context(|| format!("failed to write manifest: {}", path.display()))?;
     Ok(())
 }
 
 pub fn read_manifest(path: &Path) -> Result<BundleManifest> {
-    let bytes = fs::read(path).with_context(|| format!("failed to read manifest: {}", path.display()))?;
+    let bytes =
+        fs::read(path).with_context(|| format!("failed to read manifest: {}", path.display()))?;
     Ok(serde_json::from_slice(&bytes)?)
 }

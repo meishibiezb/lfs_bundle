@@ -12,7 +12,11 @@ pub struct PackViewState {
 
 impl PackViewState {
     pub fn to_request(&self) -> Option<PackageRequest> {
-        if self.repo_path.is_empty() || self.start_commit.is_empty() || self.end_commit.is_empty() || self.output_archive.is_empty() {
+        if self.repo_path.is_empty()
+            || self.start_commit.is_empty()
+            || self.end_commit.is_empty()
+            || self.output_archive.is_empty()
+        {
             return None;
         }
         Some(PackageRequest {
@@ -27,13 +31,30 @@ impl PackViewState {
 
 pub fn render(ui: &mut Ui, state: &mut PackViewState) {
     ui.heading("Packaging");
-    ui.label("Repository");
-    ui.text_edit_singleline(&mut state.repo_path);
-    ui.label("Start commit");
-    ui.text_edit_singleline(&mut state.start_commit);
-    ui.label("End commit");
-    ui.text_edit_singleline(&mut state.end_commit);
-    ui.label("Output archive");
-    ui.text_edit_singleline(&mut state.output_archive);
-    ui.checkbox(&mut state.safe_mode, "Safe mode");
+    ui.group(|ui| {
+        ui.label("Repository");
+        ui.text_edit_singleline(&mut state.repo_path);
+        ui.label("Start commit");
+        ui.text_edit_singleline(&mut state.start_commit);
+        ui.label("End commit");
+        ui.text_edit_singleline(&mut state.end_commit);
+        ui.label("Output archive");
+        ui.text_edit_singleline(&mut state.output_archive);
+        ui.checkbox(&mut state.safe_mode, "Safe mode");
+    });
+
+    ui.separator();
+    ui.heading("Preview");
+    if let Some(request) = state.to_request() {
+        ui.label(format!(
+            "{} -> {}",
+            request.start_commit, request.end_commit
+        ));
+        ui.label(format!("Output: {}", request.output_archive.display()));
+    } else {
+        ui.colored_label(
+            egui::Color32::YELLOW,
+            "Fill repository, commit range, and output path",
+        );
+    }
 }

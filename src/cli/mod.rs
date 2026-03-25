@@ -53,7 +53,13 @@ fn try_run() -> Result<()> {
 
     match cli.command {
         Some(Commands::Gui) | None => crate::gui::launch(),
-        Some(Commands::Pack { repo, from, to, output, direct }) => {
+        Some(Commands::Pack {
+            repo,
+            from,
+            to,
+            output,
+            direct,
+        }) => {
             let summary = package_repository(&PackageRequest {
                 repo_path: repo,
                 start_commit: from,
@@ -67,7 +73,12 @@ fn try_run() -> Result<()> {
             );
             Ok(())
         }
-        Some(Commands::Import { repo, branch, archive, direct }) => {
+        Some(Commands::Import {
+            repo,
+            branch,
+            archive,
+            direct,
+        }) => {
             import_archive(&ImportRequest {
                 repo_path: repo,
                 branch,

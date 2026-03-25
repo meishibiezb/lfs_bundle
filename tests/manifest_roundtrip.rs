@@ -1,5 +1,5 @@
 use lfs_bundle::core::archive::{build_final_archive, inspect_archive};
-use lfs_bundle::core::manifest::{write_manifest, BundleManifest, FileEntry};
+use lfs_bundle::core::manifest::{BundleManifest, FileEntry, write_manifest};
 use lfs_bundle::core::models::PackageRequest;
 use tempfile::tempdir;
 
@@ -25,8 +25,16 @@ fn manifest_roundtrips_through_json() {
         start_commit: "abc".into(),
         end_commit: "def".into(),
         target_commit: "def".into(),
-        bundle: FileEntry { name: "bundle.bundle".into(), size_bytes: 10, sha256: "1".into() },
-        lfs: FileEntry { name: "lfs.tar.gz".into(), size_bytes: 20, sha256: "2".into() },
+        bundle: FileEntry {
+            name: "bundle.bundle".into(),
+            size_bytes: 10,
+            sha256: "1".into(),
+        },
+        lfs: FileEntry {
+            name: "lfs.tar.gz".into(),
+            size_bytes: 20,
+            sha256: "2".into(),
+        },
         lfs_object_count: 1,
         created_at: "2026-03-25T00:00:00Z".into(),
     };
@@ -52,8 +60,16 @@ fn extracted_archive_manifest_matches_expected_commits() {
         start_commit: "abc".into(),
         end_commit: "def".into(),
         target_commit: "def".into(),
-        bundle: FileEntry { name: "bundle.bundle".into(), size_bytes: 6, sha256: "1".into() },
-        lfs: FileEntry { name: "lfs.tar.gz".into(), size_bytes: 3, sha256: "2".into() },
+        bundle: FileEntry {
+            name: "bundle.bundle".into(),
+            size_bytes: 6,
+            sha256: "1".into(),
+        },
+        lfs: FileEntry {
+            name: "lfs.tar.gz".into(),
+            size_bytes: 3,
+            sha256: "2".into(),
+        },
         lfs_object_count: 0,
         created_at: "2026-03-25T00:00:00Z".into(),
     };
