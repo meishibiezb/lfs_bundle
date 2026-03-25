@@ -1,5 +1,7 @@
-use crate::core::models::ImportRequest;
+﻿use crate::core::models::ImportRequest;
+use crate::gui::picker;
 use egui::Ui;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default)]
 pub struct ImportViewState {
@@ -10,6 +12,18 @@ pub struct ImportViewState {
 }
 
 impl ImportViewState {
+    pub fn apply_archive_path_from_picker(&mut self, path: Option<PathBuf>) {
+        if let Some(path) = path {
+            self.archive_path = path.to_string_lossy().to_string();
+        }
+    }
+
+    pub fn apply_repo_path_from_picker(&mut self, path: Option<PathBuf>) {
+        if let Some(path) = path {
+            self.repo_path = path.to_string_lossy().to_string();
+        }
+    }
+
     pub fn to_request(&self) -> Option<ImportRequest> {
         if self.archive_path.is_empty() || self.repo_path.is_empty() || self.branch.is_empty() {
             return None;
@@ -27,9 +41,21 @@ pub fn render(ui: &mut Ui, state: &mut ImportViewState) {
     ui.heading("Import");
     ui.group(|ui| {
         ui.label("Archive path");
-        ui.text_edit_singleline(&mut state.archive_path);
+        ui.horizontal(|ui| {
+            ui.text_edit_singleline(&mut state.archive_path);
+            if ui.button("Browse...").clicked() {
+                state.apply_archive_path_from_picker(picker::pick_archive_file());
+            }
+        });
+
         ui.label("Repository");
-        ui.text_edit_singleline(&mut state.repo_path);
+        ui.horizontal(|ui| {
+            ui.text_edit_singleline(&mut state.repo_path);
+            if ui.button("Browse...").clicked() {
+                state.apply_repo_path_from_picker(picker::pick_repo_dir());
+            }
+        });
+
         ui.label("Branch");
         ui.text_edit_singleline(&mut state.branch);
         ui.checkbox(&mut state.safe_mode, "Safe mode");
