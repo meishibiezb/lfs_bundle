@@ -1,5 +1,6 @@
 ﻿use crate::core::models::{CommitTreeNode, PackageRequest};
 use crate::core::repo::{is_valid_commit_range, load_branch_commit_tree};
+use crate::gui::i18n::tr;
 use crate::gui::picker;
 use anyhow::Result;
 use egui::{ScrollArea, Ui};
@@ -114,36 +115,36 @@ impl PackViewState {
 }
 
 pub fn render(ui: &mut Ui, state: &mut PackViewState) {
-    ui.heading("Packaging");
+    ui.heading(tr("pack.heading"));
     ui.group(|ui| {
-        ui.label("Repository");
+        ui.label(tr("label.repository"));
         ui.horizontal(|ui| {
             ui.text_edit_singleline(&mut state.repo_path);
-            if ui.button("Browse...").clicked() {
+            if ui.button(tr("btn.browse")).clicked() {
                 state.apply_repo_path_from_picker(picker::pick_repo_dir());
             }
         });
 
-        ui.label("Branch");
+        ui.label(tr("label.branch"));
         ui.horizontal(|ui| {
             ui.text_edit_singleline(&mut state.branch);
-            if ui.button("Load commits").clicked() {
+            if ui.button(tr("btn.load_commits")).clicked() {
                 match state.reload_commit_tree() {
                     Ok(()) => state.status_message = None,
-                    Err(err) => state.status_message = Some(format!("failed to load commits: {err:#}")),
+                    Err(err) => {
+                        state.status_message =
+                            Some(format!("{}: {err:#}", tr("status.load_commit_failed")))
+                    }
                 }
             }
         });
 
         ui.separator();
-        ui.label("Commit tree (current branch)");
+        ui.label(tr("pack.commit_tree"));
         ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
             for (index, node) in state.commits.iter().enumerate() {
                 let selected = state.highlighted_commit == Some(index);
-                let label = format!(
-                    "{} {} {}",
-                    node.graph_prefix, node.short_id, node.summary
-                );
+                let label = format!("{} {} {}", node.graph_prefix, node.short_id, node.summary);
                 if ui.selectable_label(selected, label).clicked() {
                     state.highlighted_commit = Some(index);
                 }
@@ -151,34 +152,40 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
         });
 
         ui.horizontal(|ui| {
-            if ui.button("Set As Start").clicked() {
+            if ui.button(tr("btn.set_start")).clicked() {
                 state.set_highlighted_as_start();
                 match state.refresh_range_validity() {
                     Ok(()) => state.status_message = None,
-                    Err(err) => state.status_message = Some(format!("range validation failed: {err:#}")),
+                    Err(err) => {
+                        state.status_message =
+                            Some(format!("{}: {err:#}", tr("status.validate_failed")))
+                    }
                 }
             }
-            if ui.button("Set As End").clicked() {
+            if ui.button(tr("btn.set_end")).clicked() {
                 state.set_highlighted_as_end();
                 match state.refresh_range_validity() {
                     Ok(()) => state.status_message = None,
-                    Err(err) => state.status_message = Some(format!("range validation failed: {err:#}")),
+                    Err(err) => {
+                        state.status_message =
+                            Some(format!("{}: {err:#}", tr("status.validate_failed")))
+                    }
                 }
             }
         });
 
-        ui.label(format!("Start: {}", state.start_commit));
-        ui.label(format!("End: {}", state.end_commit));
+        ui.label(format!("{}: {}", tr("label.start_selected"), state.start_commit));
+        ui.label(format!("{}: {}", tr("label.end_selected"), state.end_commit));
 
-        ui.label("Output archive");
+        ui.label(tr("label.output_archive"));
         ui.horizontal(|ui| {
             ui.text_edit_singleline(&mut state.output_archive);
-            if ui.button("Browse...").clicked() {
+            if ui.button(tr("btn.browse")).clicked() {
                 state.apply_output_archive_from_picker(picker::pick_output_archive_file());
             }
         });
 
-        ui.checkbox(&mut state.safe_mode, "Safe mode");
+        ui.checkbox(&mut state.safe_mode, tr("label.safe_mode"));
 
         if let Some(message) = &state.status_message {
             ui.colored_label(egui::Color32::RED, message);
@@ -186,20 +193,17 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
     });
 
     ui.separator();
-    ui.heading("Preview");
+    ui.heading(tr("preview.heading"));
     match state.range_valid {
-        Some(true) => ui.colored_label(egui::Color32::LIGHT_GREEN, "Commit range is valid."),
-        Some(false) => ui.colored_label(egui::Color32::RED, "Commit range is invalid."),
-        None => ui.colored_label(egui::Color32::YELLOW, "Please set both Start and End."),
+        Some(true) => ui.colored_label(egui::Color32::LIGHT_GREEN, tr("status.range_valid")),
+        Some(false) => ui.colored_label(egui::Color32::RED, tr("status.range_invalid")),
+        None => ui.colored_label(egui::Color32::YELLOW, tr("status.range_pending")),
     };
 
     if let Some(request) = state.to_request() {
         ui.label(format!("{} -> {}", request.start_commit, request.end_commit));
         ui.label(format!("Output: {}", request.output_archive.display()));
     } else {
-        ui.colored_label(
-            egui::Color32::YELLOW,
-            "Fill repository, commit range, and output path",
-        );
+        ui.colored_label(egui::Color32::YELLOW, tr("status.fill_required_pack"));
     }
 }

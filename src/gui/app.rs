@@ -1,3 +1,4 @@
+﻿use crate::gui::i18n::tr;
 use crate::gui::theme::AppTheme;
 use crate::gui::views::{history, import, pack, settings};
 
@@ -57,25 +58,28 @@ impl eframe::App for BundleStudioApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("LFS Bundle Studio");
+                ui.heading(tr("app.title"));
                 ui.label(format!(
-                    "Accent: #{:02X}{:02X}{:02X}",
-                    self.theme.accent[0], self.theme.accent[1], self.theme.accent[2]
+                    "{}: #{:02X}{:02X}{:02X}",
+                    tr("label.accent"),
+                    self.theme.accent[0],
+                    self.theme.accent[1],
+                    self.theme.accent[2]
                 ));
             });
         });
 
         egui::SidePanel::left("nav").show(ctx, |ui| {
-            if ui.button("Packaging").clicked() {
+            if ui.button(tr("nav.packaging")).clicked() {
                 self.active_tab = AppTab::Packaging;
             }
-            if ui.button("Import").clicked() {
+            if ui.button(tr("nav.import")).clicked() {
                 self.active_tab = AppTab::Import;
             }
-            if ui.button("History").clicked() {
+            if ui.button(tr("nav.history")).clicked() {
                 self.active_tab = AppTab::History;
             }
-            if ui.button("Settings").clicked() {
+            if ui.button(tr("nav.settings")).clicked() {
                 self.active_tab = AppTab::Settings;
             }
         });

@@ -6,8 +6,9 @@ pub mod views;
 
 pub fn launch() -> anyhow::Result<()> {
     let options = eframe::NativeOptions::default();
+    let title = i18n::tr("app.title");
     eframe::run_native(
-        "LFS Bundle Studio",
+        title.as_str(),
         options,
         Box::new(|_cc| Ok(Box::new(app::BundleStudioApp::default()))),
     )

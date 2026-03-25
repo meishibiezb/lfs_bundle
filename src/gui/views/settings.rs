@@ -1,3 +1,4 @@
+﻿use crate::gui::i18n::tr;
 use egui::Ui;
 
 #[derive(Clone, Debug)]
@@ -16,8 +17,8 @@ impl Default for SettingsViewState {
 }
 
 pub fn render(ui: &mut Ui, state: &mut SettingsViewState) {
-    ui.heading("Settings");
-    ui.checkbox(&mut state.default_safe_mode, "Default to safe mode");
-    ui.label("Custom git path");
+    ui.heading(tr("settings.heading"));
+    ui.checkbox(&mut state.default_safe_mode, tr("settings.default_safe_mode"));
+    ui.label(tr("settings.custom_git_path"));
     ui.text_edit_singleline(&mut state.custom_git_path);
 }

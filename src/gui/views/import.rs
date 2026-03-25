@@ -1,4 +1,5 @@
 ﻿use crate::core::models::ImportRequest;
+use crate::gui::i18n::tr;
 use crate::gui::picker;
 use egui::Ui;
 use std::path::PathBuf;
@@ -38,37 +39,34 @@ impl ImportViewState {
 }
 
 pub fn render(ui: &mut Ui, state: &mut ImportViewState) {
-    ui.heading("Import");
+    ui.heading(tr("import.heading"));
     ui.group(|ui| {
-        ui.label("Archive path");
+        ui.label(tr("label.archive_path"));
         ui.horizontal(|ui| {
             ui.text_edit_singleline(&mut state.archive_path);
-            if ui.button("Browse...").clicked() {
+            if ui.button(tr("btn.browse")).clicked() {
                 state.apply_archive_path_from_picker(picker::pick_archive_file());
             }
         });
 
-        ui.label("Repository");
+        ui.label(tr("label.repository"));
         ui.horizontal(|ui| {
             ui.text_edit_singleline(&mut state.repo_path);
-            if ui.button("Browse...").clicked() {
+            if ui.button(tr("btn.browse")).clicked() {
                 state.apply_repo_path_from_picker(picker::pick_repo_dir());
             }
         });
 
-        ui.label("Branch");
+        ui.label(tr("label.branch"));
         ui.text_edit_singleline(&mut state.branch);
-        ui.checkbox(&mut state.safe_mode, "Safe mode");
+        ui.checkbox(&mut state.safe_mode, tr("label.safe_mode"));
     });
 
     ui.separator();
-    ui.heading("Validation");
+    ui.heading(tr("validation.heading"));
     if state.to_request().is_some() {
-        ui.colored_label(egui::Color32::LIGHT_GREEN, "Ready to import");
+        ui.colored_label(egui::Color32::LIGHT_GREEN, tr("status.ready_import"));
     } else {
-        ui.colored_label(
-            egui::Color32::YELLOW,
-            "Fill archive, repo, and branch first",
-        );
+        ui.colored_label(egui::Color32::YELLOW, tr("status.fill_required_import"));
     }
 }
