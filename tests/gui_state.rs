@@ -1,4 +1,5 @@
-﻿use lfs_bundle::gui::app::{AppTab, BundleStudioApp};
+﻿use lfs_bundle::core::models::CommitTreeNode;
+use lfs_bundle::gui::app::{AppTab, BundleStudioApp};
 use lfs_bundle::gui::views::import::ImportViewState;
 use lfs_bundle::gui::views::pack::PackViewState;
 
@@ -16,6 +17,7 @@ fn pack_form_builds_safe_mode_request_from_selected_commits() {
         end_commit: "def456".into(),
         output_archive: "D:/out/pkg.zip".into(),
         safe_mode: true,
+        range_valid: Some(true),
         ..Default::default()
     };
 
@@ -63,4 +65,39 @@ fn import_state_ignores_cancelled_picker_result() {
     state.archive_path = "existing.zip".into();
     state.apply_archive_path_from_picker(None);
     assert_eq!(state.archive_path, "existing.zip");
+}
+
+#[test]
+fn clicking_commit_then_set_start_updates_start_commit() {
+    let mut state = PackViewState {
+        commits: vec![CommitTreeNode {
+            id: "1234567890abcdef".into(),
+            short_id: "12345678".into(),
+            summary: "demo".into(),
+            author: "u".into(),
+            timestamp: "t".into(),
+            parents: vec![],
+            graph_prefix: "*".into(),
+        }],
+        highlighted_commit: Some(0),
+        ..Default::default()
+    };
+
+    state.set_highlighted_as_start();
+    assert_eq!(state.start_commit, "1234567890abcdef");
+}
+
+#[test]
+fn invalid_commit_range_blocks_request_generation() {
+    let state = PackViewState {
+        repo_path: "D:/repo".into(),
+        start_commit: "end".into(),
+        end_commit: "start".into(),
+        output_archive: "D:/out/pkg.zip".into(),
+        safe_mode: true,
+        range_valid: Some(false),
+        ..Default::default()
+    };
+
+    assert!(state.to_request().is_none());
 }
