@@ -45,7 +45,7 @@ pub fn package_repository(req: &PackageRequest) -> Result<PackageSummary> {
     bundle_result?;
     delete_ref_result?;
 
-    let lfs_paths = match run_command(
+    let lfs_relative_paths = match run_command(
         "git",
         &["lfs", "ls-files", "--long", req.start_commit.as_str(), req.end_commit.as_str()],
         Some(repo_path),
@@ -53,14 +53,11 @@ pub fn package_repository(req: &PackageRequest) -> Result<PackageSummary> {
         Ok(output) => {
             let stdout = String::from_utf8(output.stdout).context("git lfs output was not utf-8")?;
             parse_lfs_output(&stdout)
-                .into_iter()
-                .map(|relative| repo_path.join(relative))
-                .collect::<Vec<_>>()
         }
         Err(_) => Vec::new(),
     };
 
-    create_lfs_tar(&lfs_path, &lfs_paths)?;
+    create_lfs_tar(&lfs_path, repo_path, &lfs_relative_paths)?;
 
     let range = format!("{}..{}", req.start_commit, req.end_commit);
     let commit_count = count_commits_in_range(repo_path, &range)?;
@@ -76,7 +73,7 @@ pub fn package_repository(req: &PackageRequest) -> Result<PackageSummary> {
         target_commit: req.end_commit.clone(),
         bundle: file_entry("bundle.bundle", &bundle_path)?,
         lfs: file_entry("lfs.tar.gz", &lfs_path)?,
-        lfs_object_count: lfs_paths.len(),
+        lfs_object_count: lfs_relative_paths.len(),
         created_at: timestamp_string(),
     };
     write_manifest(&manifest_path, &manifest)?;
@@ -85,7 +82,7 @@ pub fn package_repository(req: &PackageRequest) -> Result<PackageSummary> {
 
     Ok(PackageSummary {
         commit_count,
-        lfs_object_count: lfs_paths.len(),
+        lfs_object_count: lfs_relative_paths.len(),
         bundle_name: "bundle.bundle".into(),
         lfs_name: "lfs.tar.gz".into(),
     })
