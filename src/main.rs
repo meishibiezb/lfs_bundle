@@ -4,6 +4,8 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+// this project was inspired by
+// https://gist.github.com/dvdveer/a47966db83af115e6200124f92e22761#file-create_lfs_bundle-sh
 fn main() -> Result<()> {
     check_env()?;
     pack_lfs_bundle()
