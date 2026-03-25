@@ -11,7 +11,12 @@ use std::sync::Arc;
 use egui::{FontData, FontDefinitions, FontFamily};
 
 pub fn launch() -> anyhow::Result<()> {
-    let options = eframe::NativeOptions::default();
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([480.0, 480.0])
+            .with_min_inner_size([480.0, 480.0]),
+        ..Default::default()
+    };
     let title = i18n::tr("app.title");
     eframe::run_native(
         title.as_str(),
