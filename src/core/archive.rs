@@ -1,3 +1,4 @@
+use crate::core::manifest::{read_manifest, BundleManifest};
 use anyhow::{Context, Result};
 use std::fs;
 use std::io::{self, Write};
@@ -42,4 +43,10 @@ pub fn extract_archive(input_zip: &Path, dest: &Path) -> Result<()> {
     }
 
     Ok(())
+}
+
+pub fn inspect_archive(input_zip: &Path) -> Result<BundleManifest> {
+    let temp = tempfile::tempdir()?;
+    extract_archive(input_zip, temp.path())?;
+    read_manifest(&temp.path().join("manifest.json"))
 }
