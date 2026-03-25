@@ -36,6 +36,7 @@ fn import_form_builds_request_for_existing_branch() {
         repo_path: "D:/repo".into(),
         branch: "master".into(),
         safe_mode: true,
+        ..Default::default()
     };
 
     let request = state.to_request().expect("request");
@@ -100,4 +101,33 @@ fn invalid_commit_range_blocks_request_generation() {
     };
 
     assert!(state.to_request().is_none());
+}
+
+#[test]
+fn same_start_and_end_commit_blocks_request_generation() {
+    let state = PackViewState {
+        repo_path: "D:/repo".into(),
+        start_commit: "same".into(),
+        end_commit: "same".into(),
+        output_archive: "D:/out/pkg.zip".into(),
+        safe_mode: true,
+        range_valid: Some(true),
+        ..Default::default()
+    };
+
+    assert!(state.to_request().is_none());
+}
+
+#[test]
+fn pack_success_status_is_not_error() {
+    let mut state = PackViewState::default();
+    state.set_status_success("ok");
+    assert!(!state.status_is_error);
+}
+
+#[test]
+fn import_success_status_is_not_error() {
+    let mut state = ImportViewState::default();
+    state.set_status_success("ok");
+    assert!(!state.status_is_error);
 }

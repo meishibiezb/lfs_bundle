@@ -1,4 +1,8 @@
-﻿use crate::gui::i18n::tr;
+use crate::core::import::import_archive;
+use crate::core::models::ImportRequest;
+use crate::core::models::PackageRequest;
+use crate::core::pack::package_repository;
+use crate::gui::i18n::tr;
 use crate::gui::theme::AppTheme;
 use crate::gui::views::{history, import, pack, settings};
 
@@ -28,6 +32,47 @@ impl BundleStudioApp {
 
     pub fn record_operation(&mut self, summary: impl Into<String>) {
         self.recent_ops.push(summary.into());
+    }
+
+    fn execute_package(&mut self, request: PackageRequest) {
+        match package_repository(&request) {
+            Ok(summary) => {
+                self.pack_view.set_status_success(format!(
+                    "{}: {} commits, {} lfs objects",
+                    tr("status.package_success"),
+                    summary.commit_count,
+                    summary.lfs_object_count
+                ));
+                self.record_operation(format!(
+                    "pack {}..{} -> {}",
+                    request.start_commit,
+                    request.end_commit,
+                    request.output_archive.display()
+                ));
+            }
+            Err(err) => {
+                self.pack_view
+                    .set_status_error(format!("{}: {err:#}", tr("status.package_failed")));
+            }
+        }
+    }
+
+    fn execute_import(&mut self, request: ImportRequest) {
+        match import_archive(&request) {
+            Ok(()) => {
+                self.import_view
+                    .set_status_success(tr("status.import_success"));
+                self.record_operation(format!(
+                    "import {} -> {}",
+                    request.archive_path.display(),
+                    request.branch
+                ));
+            }
+            Err(err) => {
+                self.import_view
+                    .set_status_error(format!("{}: {err:#}", tr("status.import_failed")));
+            }
+        }
     }
 }
 
@@ -85,8 +130,18 @@ impl eframe::App for BundleStudioApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| match self.active_tab {
-            AppTab::Packaging => pack::render(ui, &mut self.pack_view),
-            AppTab::Import => import::render(ui, &mut self.import_view),
+            AppTab::Packaging => {
+                let request = pack::render(ui, &mut self.pack_view);
+                if let Some(request) = request {
+                    self.execute_package(request);
+                }
+            }
+            AppTab::Import => {
+                let request = import::render(ui, &mut self.import_view);
+                if let Some(request) = request {
+                    self.execute_import(request);
+                }
+            }
             AppTab::History => history::render(ui, &self.recent_ops, &mut self.history_view),
             AppTab::Settings => settings::render(ui, &mut self.settings_view),
         });

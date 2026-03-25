@@ -10,6 +10,8 @@ pub struct ImportViewState {
     pub repo_path: String,
     pub branch: String,
     pub safe_mode: bool,
+    pub status_message: Option<String>,
+    pub status_is_error: bool,
 }
 
 impl ImportViewState {
@@ -36,9 +38,21 @@ impl ImportViewState {
             safe_mode: self.safe_mode,
         })
     }
+
+    pub fn set_status_success(&mut self, message: impl Into<String>) {
+        self.status_message = Some(message.into());
+        self.status_is_error = false;
+    }
+
+    pub fn set_status_error(&mut self, message: impl Into<String>) {
+        self.status_message = Some(message.into());
+        self.status_is_error = true;
+    }
 }
 
-pub fn render(ui: &mut Ui, state: &mut ImportViewState) {
+pub fn render(ui: &mut Ui, state: &mut ImportViewState) -> Option<ImportRequest> {
+    let mut import_request = None;
+
     ui.heading(tr("import.heading"));
     ui.group(|ui| {
         ui.label(tr("label.archive_path"));
@@ -60,13 +74,27 @@ pub fn render(ui: &mut Ui, state: &mut ImportViewState) {
         ui.label(tr("label.branch"));
         ui.text_edit_singleline(&mut state.branch);
         ui.checkbox(&mut state.safe_mode, tr("label.safe_mode"));
+
+        if let Some(message) = &state.status_message {
+            let color = if state.status_is_error {
+                egui::Color32::RED
+            } else {
+                egui::Color32::LIGHT_GREEN
+            };
+            ui.colored_label(color, message);
+        }
     });
 
     ui.separator();
     ui.heading(tr("validation.heading"));
-    if state.to_request().is_some() {
+    if let Some(request) = state.to_request() {
         ui.colored_label(egui::Color32::LIGHT_GREEN, tr("status.ready_import"));
+        if ui.button(tr("btn.import")).clicked() {
+            import_request = Some(request);
+        }
     } else {
         ui.colored_label(egui::Color32::YELLOW, tr("status.fill_required_import"));
     }
+
+    import_request
 }

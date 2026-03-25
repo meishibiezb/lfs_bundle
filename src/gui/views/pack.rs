@@ -18,6 +18,7 @@ pub struct PackViewState {
     pub safe_mode: bool,
     pub range_valid: Option<bool>,
     pub status_message: Option<String>,
+    pub status_is_error: bool,
 }
 
 impl Default for PackViewState {
@@ -33,6 +34,7 @@ impl Default for PackViewState {
             safe_mode: true,
             range_valid: None,
             status_message: None,
+            status_is_error: false,
         }
     }
 }
@@ -84,6 +86,10 @@ impl PackViewState {
             self.range_valid = None;
             return Ok(());
         }
+        if self.start_commit == self.end_commit {
+            self.range_valid = Some(false);
+            return Ok(());
+        }
 
         let repo_path = Path::new(&self.repo_path);
         self.range_valid = Some(is_valid_commit_range(
@@ -98,6 +104,7 @@ impl PackViewState {
         if self.repo_path.is_empty()
             || self.start_commit.is_empty()
             || self.end_commit.is_empty()
+            || self.start_commit == self.end_commit
             || self.output_archive.is_empty()
             || self.range_valid != Some(true)
         {
@@ -112,9 +119,21 @@ impl PackViewState {
             safe_mode: self.safe_mode,
         })
     }
+
+    pub fn set_status_success(&mut self, message: impl Into<String>) {
+        self.status_message = Some(message.into());
+        self.status_is_error = false;
+    }
+
+    pub fn set_status_error(&mut self, message: impl Into<String>) {
+        self.status_message = Some(message.into());
+        self.status_is_error = true;
+    }
 }
 
-pub fn render(ui: &mut Ui, state: &mut PackViewState) {
+pub fn render(ui: &mut Ui, state: &mut PackViewState) -> Option<PackageRequest> {
+    let mut package_request = None;
+
     ui.heading(tr("pack.heading"));
     ui.group(|ui| {
         ui.label(tr("label.repository"));
@@ -132,8 +151,10 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
                 match state.reload_commit_tree() {
                     Ok(()) => state.status_message = None,
                     Err(err) => {
-                        state.status_message =
-                            Some(format!("{}: {err:#}", tr("status.load_commit_failed")))
+                        state.set_status_error(format!(
+                            "{}: {err:#}",
+                            tr("status.load_commit_failed")
+                        ));
                     }
                 }
             }
@@ -157,8 +178,8 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
                 match state.refresh_range_validity() {
                     Ok(()) => state.status_message = None,
                     Err(err) => {
-                        state.status_message =
-                            Some(format!("{}: {err:#}", tr("status.validate_failed")))
+                        state
+                            .set_status_error(format!("{}: {err:#}", tr("status.validate_failed")));
                     }
                 }
             }
@@ -167,8 +188,8 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
                 match state.refresh_range_validity() {
                     Ok(()) => state.status_message = None,
                     Err(err) => {
-                        state.status_message =
-                            Some(format!("{}: {err:#}", tr("status.validate_failed")))
+                        state
+                            .set_status_error(format!("{}: {err:#}", tr("status.validate_failed")));
                     }
                 }
             }
@@ -196,7 +217,12 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
         ui.checkbox(&mut state.safe_mode, tr("label.safe_mode"));
 
         if let Some(message) = &state.status_message {
-            ui.colored_label(egui::Color32::RED, message);
+            let color = if state.status_is_error {
+                egui::Color32::RED
+            } else {
+                egui::Color32::LIGHT_GREEN
+            };
+            ui.colored_label(color, message);
         }
     });
 
@@ -214,7 +240,12 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
             request.start_commit, request.end_commit
         ));
         ui.label(format!("Output: {}", request.output_archive.display()));
+        if ui.button(tr("btn.package")).clicked() {
+            package_request = Some(request);
+        }
     } else {
         ui.colored_label(egui::Color32::YELLOW, tr("status.fill_required_pack"));
     }
+
+    package_request
 }

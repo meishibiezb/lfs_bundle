@@ -5,10 +5,11 @@ use crate::core::process::run_command;
 use crate::core::repo::{current_head, is_git_repo_path};
 use crate::core::temp::new_session_dir;
 use crate::core::transaction::ImportTransaction;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use flate2::read::GzDecoder;
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FailureInjection {
@@ -43,11 +44,14 @@ pub fn import_archive_with_injection(
     let transaction = ImportTransaction::begin(req.repo_path.clone(), req.branch.clone())?;
     let temp_ref = format!("refs/lfs-bundle-import/{}", unique_suffix());
 
-    let apply_result = apply_bundle_to_branch(&req.repo_path, &req.branch, &bundle_path, &temp_ref);
-    if let Err(err) = apply_result {
-        let _ = delete_ref(&req.repo_path, &temp_ref);
-        return Err(err);
-    }
+    let target_commit =
+        match apply_bundle_to_branch(&req.repo_path, &req.branch, &bundle_path, &temp_ref) {
+            Ok(commit) => commit,
+            Err(err) => {
+                let _ = delete_ref(&req.repo_path, &temp_ref);
+                return Err(err);
+            }
+        };
 
     if injection == FailureInjection::FailAfterBundleApplied {
         let rollback_result = transaction.rollback();
@@ -63,6 +67,7 @@ pub fn import_archive_with_injection(
         return Err(err);
     }
 
+    sync_checked_out_branch_worktree(&req.repo_path, &req.branch, &target_commit)?;
     delete_ref(&req.repo_path, &temp_ref)?;
     Ok(())
 }
@@ -72,7 +77,7 @@ fn apply_bundle_to_branch(
     branch: &str,
     bundle_path: &Path,
     temp_ref: &str,
-) -> Result<()> {
+) -> Result<String> {
     let bundle_ref = bundle_head_ref(bundle_path)?;
     let fetch_spec = format!("{}:{}", bundle_ref, temp_ref);
     run_command(
@@ -102,7 +107,7 @@ fn apply_bundle_to_branch(
         Some(repo_path),
     )?;
 
-    Ok(())
+    Ok(target_commit)
 }
 
 fn ensure_fast_forward(repo_path: &Path, original_head: &str, target_commit: &str) -> Result<()> {
@@ -145,14 +150,18 @@ fn import_lfs_objects(repo_path: &Path, lfs_archive: &Path) -> Result<()> {
 }
 
 fn copy_tree(from: &Path, into_repo: &Path) -> Result<()> {
-    for entry in fs::read_dir(from)? {
+    copy_tree_from_root(from, from, into_repo)
+}
+
+fn copy_tree_from_root(root: &Path, current: &Path, into_repo: &Path) -> Result<()> {
+    for entry in fs::read_dir(current)? {
         let entry = entry?;
         let path = entry.path();
-        let relative = path.strip_prefix(from)?;
+        let relative = path.strip_prefix(root)?;
         let target = into_repo.join(relative);
         if path.is_dir() {
             fs::create_dir_all(&target)?;
-            copy_tree(&path, into_repo)?;
+            copy_tree_from_root(root, &path, into_repo)?;
         } else {
             if let Some(parent) = target.parent() {
                 fs::create_dir_all(parent)?;
@@ -174,4 +183,42 @@ fn unique_suffix() -> String {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_nanos().to_string())
         .unwrap_or_else(|_| "0".to_string())
+}
+
+fn sync_checked_out_branch_worktree(
+    repo_path: &Path,
+    branch: &str,
+    target_commit: &str,
+) -> Result<()> {
+    if !is_branch_checked_out(repo_path, branch)? {
+        return Ok(());
+    }
+
+    run_command("git", &["reset", "--hard", target_commit], Some(repo_path))?;
+    Ok(())
+}
+
+fn is_branch_checked_out(repo_path: &Path, branch: &str) -> Result<bool> {
+    let output = Command::new("git")
+        .args(["symbolic-ref", "--quiet", "--short", "HEAD"])
+        .current_dir(repo_path)
+        .output()
+        .context("failed to run git symbolic-ref --short HEAD")?;
+
+    match output.status.code() {
+        Some(0) => {
+            let current = String::from_utf8(output.stdout)
+                .context("git symbolic-ref output was not utf-8")?
+                .trim()
+                .to_string();
+            Ok(current == branch)
+        }
+        Some(1) => Ok(false),
+        Some(other) => bail!(
+            "git symbolic-ref failed with status {other}\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        ),
+        None => bail!("git symbolic-ref terminated without an exit code"),
+    }
 }

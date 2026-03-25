@@ -14,6 +14,18 @@ fn chinese_nav_labels_exist_in_dictionary() {
 }
 
 #[test]
+fn package_button_label_exists_in_dictionary() {
+    set_locale(Locale::ZhCn);
+    assert_eq!(tr("btn.package"), "\u{6267}\u{884C}\u{6253}\u{5305}");
+}
+
+#[test]
+fn import_button_label_exists_in_dictionary() {
+    set_locale(Locale::ZhCn);
+    assert_eq!(tr("btn.import"), "\u{6267}\u{884C}\u{5BFC}\u{5165}");
+}
+
+#[test]
 fn missing_key_falls_back_to_key_literal() {
     set_locale(Locale::ZhCn);
     assert_eq!(tr("missing.key"), "missing.key");
