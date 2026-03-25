@@ -1,6 +1,6 @@
 ﻿use crate::core::models::{BranchInfo, CommitInfo, CommitTreeNode};
 use crate::core::process::run_command;
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use std::path::Path;
 use std::process::Command;
 
@@ -48,7 +48,11 @@ pub fn load_commits(repo: &Path, limit: usize) -> Result<Vec<CommitInfo>> {
         .collect())
 }
 
-pub fn load_branch_commit_tree(repo: &Path, branch: &str, limit: usize) -> Result<Vec<CommitTreeNode>> {
+pub fn load_branch_commit_tree(
+    repo: &Path,
+    branch: &str,
+    limit: usize,
+) -> Result<Vec<CommitTreeNode>> {
     let limit_string = limit.to_string();
     let output = run_command(
         "git",

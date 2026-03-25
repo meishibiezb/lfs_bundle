@@ -1,4 +1,4 @@
-﻿use std::sync::{OnceLock, RwLock};
+use std::sync::{OnceLock, RwLock};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Locale {
@@ -17,7 +17,10 @@ pub fn set_locale(locale: Locale) {
 }
 
 fn current_locale() -> Locale {
-    locale_store().read().map(|guard| *guard).unwrap_or(Locale::ZhCn)
+    locale_store()
+        .read()
+        .map(|guard| *guard)
+        .unwrap_or(Locale::ZhCn)
 }
 
 pub fn tr(key: &str) -> String {

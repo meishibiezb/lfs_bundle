@@ -1,4 +1,4 @@
-﻿use crate::core::models::{CommitTreeNode, PackageRequest};
+use crate::core::models::{CommitTreeNode, PackageRequest};
 use crate::core::repo::{is_valid_commit_range, load_branch_commit_tree};
 use crate::gui::i18n::tr;
 use crate::gui::picker;
@@ -174,8 +174,16 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
             }
         });
 
-        ui.label(format!("{}: {}", tr("label.start_selected"), state.start_commit));
-        ui.label(format!("{}: {}", tr("label.end_selected"), state.end_commit));
+        ui.label(format!(
+            "{}: {}",
+            tr("label.start_selected"),
+            state.start_commit
+        ));
+        ui.label(format!(
+            "{}: {}",
+            tr("label.end_selected"),
+            state.end_commit
+        ));
 
         ui.label(tr("label.output_archive"));
         ui.horizontal(|ui| {
@@ -201,7 +209,10 @@ pub fn render(ui: &mut Ui, state: &mut PackViewState) {
     };
 
     if let Some(request) = state.to_request() {
-        ui.label(format!("{} -> {}", request.start_commit, request.end_commit));
+        ui.label(format!(
+            "{} -> {}",
+            request.start_commit, request.end_commit
+        ));
         ui.label(format!("Output: {}", request.output_archive.display()));
     } else {
         ui.colored_label(egui::Color32::YELLOW, tr("status.fill_required_pack"));
