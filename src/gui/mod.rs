@@ -1,4 +1,6 @@
-pub mod app;
+﻿pub mod app;
+pub mod i18n;
+pub mod picker;
 pub mod theme;
 pub mod views;
 
